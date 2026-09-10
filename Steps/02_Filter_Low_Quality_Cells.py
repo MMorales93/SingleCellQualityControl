@@ -35,9 +35,7 @@ def main(args):
 	adata = sc.read_h5ad(input_path)
 	adata.raw = adata.copy()
 
-	logging.info("AnnData obs columns (%d): %s", adata.obs.shape[1], list(adata.obs.columns))
-
-	logging.info("adata shape: %s", adata.shape)
+	logging.info(adata)
 
 	# Filter low quality cells
 	adata.obs["outlier"] = (
@@ -53,6 +51,8 @@ def main(args):
 	keep = (~adata.obs["outlier"]) & (~adata.obs["MT_outlier"])
 	logging.info("Keeping %d / %d cells", keep.sum(), adata.n_obs)
 	adata = adata[keep].copy()
+
+	logging.info(adata)
 	
 	# Write filtered output (Keeping your file saving step exactly as requested)
 	out_h5 = outdir / f"{args.sample}_qc_filtered.h5ad"
