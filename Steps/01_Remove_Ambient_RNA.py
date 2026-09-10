@@ -25,12 +25,15 @@ def main(args):
 	adata_raw = sc.read_10x_mtx(str(args.raw_10x), cache=True)
 	adata_raw.var_names_make_unique()
 	adata_raw.raw = adata_raw.copy()
+	
+	logging.info("adata_raw shape: %s", adata_raw.shape)
+	logging.info(adata_raw)
 
 	adata_filt = sc.read_10x_mtx(str(args.input), cache=True)
 	adata_filt.var_names_make_unique()
-	
-	logging.info("adata_raw shape: %s", adata_raw.shape)
+
 	logging.info("adata_filt shape: %s", adata_filt.shape)
+	logging.info(adata_filt)
 
 	# Annotate QC Genes
 	adata_raw.var["MT"] = adata_raw.var_names.str.startswith("MT-")
@@ -98,14 +101,22 @@ def main(args):
 	corrected_matrix = soupx.adjustCounts(soup_channel)
 
 	# Create a fresh, completely un-normalized AnnData object
-	adata_corrected = sc.AnnData(X=corrected_matrix.T.tocsr())
-	adata_corrected.obs_names = adata_filt.obs_names
-	adata_corrected.var_names = adata_filt.var_names
+	adata_corrected = sc.AnnData(
+		X=corrected_matrix.T.tocsr(),
+		obs=adata_filt.obs.copy(),
+		var=adata_filt.var.copy()
+	)
+
+	# Preserve cell and gene indices
+	adata_corrected.obs_names = adata_filt.obs_names.copy()
+	adata_corrected.var_names = adata_filt.var_names.copy()
 
 	# Re-annotate the QC gene groups on the clean, raw SoupX counts
 	adata_corrected.var["MT"] = adata_corrected.var_names.str.startswith("MT-")
 	adata_corrected.var["RIBO"] = adata_corrected.var_names.str.startswith(("RPS", "RPL"))
 	adata_corrected.var["HB"] = adata_corrected.var_names.str.contains(r"^HB[ABDEGMQZ]\d*(?!\w)")
+
+	logging.info(adata_corrected)
 
 	# Calculate standard QC metrics on the clean raw corrected counts
 	sc.pp.calculate_qc_metrics(
