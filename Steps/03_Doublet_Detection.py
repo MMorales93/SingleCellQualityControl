@@ -20,14 +20,20 @@ def main(args):
 	logging.info("Running scrublet...")
 	adata=sc.read_h5ad(args.input)
 
+	logging.info(adata)
+
 	# Scrublet
 	sc.pp.scrublet(adata)
 	
 	adata.obs['scrublet_doublet'] = adata.obs['predicted_doublet']
 	adata.obs['scrublet_score'] = adata.obs['doublet_score']
+
+	logging.info(adata)
 	
 	del adata.obs['predicted_doublet']
 	del adata.obs['doublet_score']
+
+	logging.info(adata)
 	
 	# Doublet Detection
 	logging.info("Running doublet detection...")
@@ -44,6 +50,8 @@ def main(args):
 	
 	adata.obs['doubletdetection_doublet'] = doublets.astype(bool)
 	adata.obs['doubletdetection_score'] = doublet_score
+
+	logging.info(adata)
 	
 	out_h5 = outdir / f"{args.sample}_Post_QualityControl.h5ad"
 	adata.write(out_h5)
